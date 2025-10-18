@@ -16,6 +16,15 @@ interface Announcement {
   scraped_date: string;
   checked: number;
   created_at: string;
+  // Contact information fields
+  prenom?: string;
+  adresse?: string;
+  cod_postal?: string;
+  ville?: string;
+  mail?: string;
+  tel?: string;
+  web_site?: string;
+  ok?: string;
 }
 
 interface Stats {
@@ -47,6 +56,17 @@ export default function Home() {
     useState<NodeJS.Timeout | null>(null);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [editingContact, setEditingContact] = useState<number | null>(null);
+  const [contactForm, setContactForm] = useState({
+    prenom: "",
+    adresse: "",
+    cod_postal: "",
+    ville: "",
+    mail: "",
+    tel: "",
+    web_site: "",
+    ok: "",
+  });
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
   const IS_PRODUCTION = process.env.NODE_ENV === "production";
@@ -150,6 +170,63 @@ export default function Home() {
     setFilterCompany("");
   };
 
+  const startEditingContact = (announcement: Announcement) => {
+    setEditingContact(announcement.id);
+    setContactForm({
+      prenom: announcement.prenom || "",
+      adresse: announcement.adresse || "",
+      cod_postal: announcement.cod_postal || "",
+      ville: announcement.ville || "",
+      mail: announcement.mail || "",
+      tel: announcement.tel || "",
+      web_site: announcement.web_site || "",
+      ok: announcement.ok || "",
+    });
+  };
+
+  const saveContactInfo = async (id: number) => {
+    try {
+      await fetch(`${API_URL}/api/announcements/${id}/contact`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(contactForm),
+      });
+
+      setAnnouncements(
+        announcements.map((a) => (a.id === id ? { ...a, ...contactForm } : a))
+      );
+
+      setEditingContact(null);
+      setContactForm({
+        prenom: "",
+        adresse: "",
+        cod_postal: "",
+        ville: "",
+        mail: "",
+        tel: "",
+        web_site: "",
+        ok: "",
+      });
+    } catch (error) {
+      console.error("Error saving contact info:", error);
+      alert("Error saving contact information. Please try again.");
+    }
+  };
+
+  const cancelEditing = () => {
+    setEditingContact(null);
+    setContactForm({
+      prenom: "",
+      adresse: "",
+      cod_postal: "",
+      ville: "",
+      mail: "",
+      tel: "",
+      web_site: "",
+      ok: "",
+    });
+  };
+
   const exportToCSV = async () => {
     try {
       setExporting(true);
@@ -167,6 +244,14 @@ export default function Home() {
         "URL",
         "Status",
         "Scraped Date",
+        "Prénom",
+        "Adresse",
+        "Code Postal",
+        "Ville",
+        "Mail",
+        "Téléphone",
+        "Web Site",
+        "OK",
       ];
 
       const csvData = filteredAnnouncements.map((announcement) => [
@@ -181,6 +266,14 @@ export default function Home() {
         announcement.announcement_url,
         announcement.checked === 1 ? "Checked" : "Unchecked",
         announcement.scraped_date,
+        `"${announcement.prenom || ""}"`,
+        `"${announcement.adresse || ""}"`,
+        `"${announcement.cod_postal || ""}"`,
+        `"${announcement.ville || ""}"`,
+        `"${announcement.mail || ""}"`,
+        `"${announcement.tel || ""}"`,
+        `"${announcement.web_site || ""}"`,
+        `"${announcement.ok || ""}"`,
       ]);
 
       // Create CSV content
@@ -683,6 +776,9 @@ export default function Home() {
                       Date
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">
+                      Contact Info
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">
                       Link
                     </th>
                   </tr>
@@ -731,6 +827,183 @@ export default function Home() {
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">
                         {announcement.announcement_date}
+                      </td>
+                      <td className="px-4 py-3">
+                        {editingContact === announcement.id ? (
+                          <div className="space-y-2 min-w-[300px]">
+                            <div className="grid grid-cols-2 gap-2">
+                              <input
+                                type="text"
+                                placeholder="Prénom"
+                                value={contactForm.prenom}
+                                onChange={(e) =>
+                                  setContactForm({
+                                    ...contactForm,
+                                    prenom: e.target.value,
+                                  })
+                                }
+                                className="px-2 py-1 text-xs border border-gray-300 rounded bg-white text-gray-900"
+                              />
+                              <input
+                                type="text"
+                                placeholder="Code Postal"
+                                value={contactForm.cod_postal}
+                                onChange={(e) =>
+                                  setContactForm({
+                                    ...contactForm,
+                                    cod_postal: e.target.value,
+                                  })
+                                }
+                                className="px-2 py-1 text-xs border border-gray-300 rounded bg-white text-gray-900"
+                              />
+                            </div>
+                            <input
+                              type="text"
+                              placeholder="Adresse"
+                              value={contactForm.adresse}
+                              onChange={(e) =>
+                                setContactForm({
+                                  ...contactForm,
+                                  adresse: e.target.value,
+                                })
+                              }
+                              className="w-full px-2 py-1 text-xs border border-gray-300 rounded bg-white text-gray-900"
+                            />
+                            <div className="grid grid-cols-2 gap-2">
+                              <input
+                                type="text"
+                                placeholder="Ville"
+                                value={contactForm.ville}
+                                onChange={(e) =>
+                                  setContactForm({
+                                    ...contactForm,
+                                    ville: e.target.value,
+                                  })
+                                }
+                                className="px-2 py-1 text-xs border border-gray-300 rounded bg-white text-gray-900"
+                              />
+                              <input
+                                type="text"
+                                placeholder="OK"
+                                value={contactForm.ok}
+                                onChange={(e) =>
+                                  setContactForm({
+                                    ...contactForm,
+                                    ok: e.target.value,
+                                  })
+                                }
+                                className="px-2 py-1 text-xs border border-gray-300 rounded bg-white text-gray-900"
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <input
+                                type="email"
+                                placeholder="Mail"
+                                value={contactForm.mail}
+                                onChange={(e) =>
+                                  setContactForm({
+                                    ...contactForm,
+                                    mail: e.target.value,
+                                  })
+                                }
+                                className="px-2 py-1 text-xs border border-gray-300 rounded bg-white text-gray-900"
+                              />
+                              <input
+                                type="tel"
+                                placeholder="Téléphone"
+                                value={contactForm.tel}
+                                onChange={(e) =>
+                                  setContactForm({
+                                    ...contactForm,
+                                    tel: e.target.value,
+                                  })
+                                }
+                                className="px-2 py-1 text-xs border border-gray-300 rounded bg-white text-gray-900"
+                              />
+                            </div>
+                            <input
+                              type="url"
+                              placeholder="Web Site"
+                              value={contactForm.web_site}
+                              onChange={(e) =>
+                                setContactForm({
+                                  ...contactForm,
+                                  web_site: e.target.value,
+                                })
+                              }
+                              className="w-full px-2 py-1 text-xs border border-gray-300 rounded bg-white text-gray-900"
+                            />
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => saveContactInfo(announcement.id)}
+                                className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                              >
+                                ✓ Save
+                              </button>
+                              <button
+                                onClick={cancelEditing}
+                                className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700"
+                              >
+                                ✗ Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-1">
+                            <div className="text-xs text-gray-600">
+                              {announcement.prenom && (
+                                <div>
+                                  <strong>Prénom:</strong> {announcement.prenom}
+                                </div>
+                              )}
+                              {announcement.adresse && (
+                                <div>
+                                  <strong>Adresse:</strong>{" "}
+                                  {announcement.adresse}
+                                </div>
+                              )}
+                              {announcement.cod_postal && (
+                                <div>
+                                  <strong>Code:</strong>{" "}
+                                  {announcement.cod_postal}
+                                </div>
+                              )}
+                              {announcement.ville && (
+                                <div>
+                                  <strong>Ville:</strong> {announcement.ville}
+                                </div>
+                              )}
+                              {announcement.mail && (
+                                <div>
+                                  <strong>Mail:</strong> {announcement.mail}
+                                </div>
+                              )}
+                              {announcement.tel && (
+                                <div>
+                                  <strong>Tel:</strong> {announcement.tel}
+                                </div>
+                              )}
+                              {announcement.web_site && (
+                                <div>
+                                  <strong>Web:</strong> {announcement.web_site}
+                                </div>
+                              )}
+                              {announcement.ok && (
+                                <div>
+                                  <strong>OK:</strong> {announcement.ok}
+                                </div>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => startEditingContact(announcement)}
+                              className="text-xs text-blue-600 hover:text-blue-800 underline"
+                            >
+                              {announcement.prenom
+                                ? "✏️ Edit"
+                                : "➕ Add Contact"}
+                            </button>
+                          </div>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <a
