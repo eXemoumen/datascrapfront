@@ -46,6 +46,7 @@ export default function Home() {
   const [statusCheckInterval, setStatusCheckInterval] =
     useState<NodeJS.Timeout | null>(null);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
   const IS_PRODUCTION = process.env.NODE_ENV === "production";
@@ -147,6 +148,67 @@ export default function Home() {
     setFilterDateFrom("");
     setFilterDateTo("");
     setFilterCompany("");
+  };
+
+  const exportToCSV = async () => {
+    try {
+      setExporting(true);
+
+      // Prepare CSV data
+      const csvHeaders = [
+        "ID",
+        "Company Name",
+        "Title",
+        "Description",
+        "Type",
+        "Location",
+        "Products",
+        "Date",
+        "URL",
+        "Status",
+        "Scraped Date",
+      ];
+
+      const csvData = filteredAnnouncements.map((announcement) => [
+        announcement.id,
+        `"${announcement.company_name}"`,
+        `"${announcement.announcement_title}"`,
+        `"${announcement.description.replace(/"/g, '""')}"`,
+        `"${announcement.announcement_type}"`,
+        `"${announcement.location}"`,
+        `"${announcement.products}"`,
+        announcement.announcement_date,
+        announcement.announcement_url,
+        announcement.checked === 1 ? "Checked" : "Unchecked",
+        announcement.scraped_date,
+      ]);
+
+      // Create CSV content
+      const csvContent = [
+        csvHeaders.join(","),
+        ...csvData.map((row) => row.join(",")),
+      ].join("\n");
+
+      // Create and download file
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute(
+        "download",
+        `espaceagro-announcements-${new Date().toISOString().split("T")[0]}.csv`
+      );
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setExporting(false);
+    } catch (error) {
+      console.error("Error exporting CSV:", error);
+      setExporting(false);
+      alert("Error exporting CSV. Please try again.");
+    }
   };
 
   const filteredAnnouncements = Array.isArray(announcements)
@@ -295,6 +357,77 @@ export default function Home() {
             >
               {showAdvancedFilters ? "🔽 Hide Filters" : "🔍 Advanced Filters"}
             </button>
+            <button
+              onClick={exportToCSV}
+              disabled={exporting || filteredAnnouncements.length === 0}
+              className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {exporting ? "📊 Exporting..." : "📊 Export CSV"}
+            </button>
+          </div>
+        </div>
+
+        {/* Quick Filters Section */}
+        <div className="bg-white rounded-lg shadow-lg p-4 mb-4">
+          <div className="flex flex-wrap gap-2 items-center">
+            <span className="text-sm font-medium text-gray-600 mr-2">
+              Quick Filters:
+            </span>
+            <button
+              onClick={() =>
+                setFilterStatus(
+                  filterStatus === "unchecked" ? "all" : "unchecked"
+                )
+              }
+              className={`px-3 py-1 rounded-full text-sm ${
+                filterStatus === "unchecked"
+                  ? "bg-yellow-100 text-yellow-800 border border-yellow-300"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              📋 Unchecked Only
+            </button>
+            <button
+              onClick={() =>
+                setFilterStatus(filterStatus === "checked" ? "all" : "checked")
+              }
+              className={`px-3 py-1 rounded-full text-sm ${
+                filterStatus === "checked"
+                  ? "bg-green-100 text-green-800 border border-green-300"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              ✅ Checked Only
+            </button>
+            <button
+              onClick={() => {
+                const today = new Date().toISOString().split("T")[0];
+                setFilterDateFrom(today);
+                setFilterDateTo("");
+              }}
+              className="px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-700 hover:bg-gray-200"
+            >
+              📅 Today
+            </button>
+            <button
+              onClick={() => {
+                const today = new Date();
+                const weekAgo = new Date(
+                  today.getTime() - 7 * 24 * 60 * 60 * 1000
+                );
+                setFilterDateFrom(weekAgo.toISOString().split("T")[0]);
+                setFilterDateTo(today.toISOString().split("T")[0]);
+              }}
+              className="px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-700 hover:bg-gray-200"
+            >
+              📅 Last 7 Days
+            </button>
+            <button
+              onClick={clearAllFilters}
+              className="px-3 py-1 rounded-full text-sm bg-red-100 text-red-700 hover:bg-red-200"
+            >
+              🗑️ Clear All
+            </button>
           </div>
         </div>
 
@@ -315,7 +448,7 @@ export default function Home() {
                 placeholder="🔍 Search in title, description, location, products, or company..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-500"
               />
             </div>
 
@@ -329,7 +462,7 @@ export default function Home() {
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
                 >
                   <option value="all">All Types</option>
                   {uniqueTypes.map((type) => (
@@ -348,7 +481,7 @@ export default function Home() {
                 <select
                   value={filterLocation}
                   onChange={(e) => setFilterLocation(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
                 >
                   <option value="all">All Locations</option>
                   {uniqueLocations.map((location) => (
@@ -367,7 +500,7 @@ export default function Home() {
                 <select
                   value={filterProduct}
                   onChange={(e) => setFilterProduct(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
                 >
                   <option value="all">All Products</option>
                   {uniqueProducts.map((product) => (
@@ -386,7 +519,7 @@ export default function Home() {
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
                 >
                   <option value="all">All Status</option>
                   <option value="checked">Checked</option>
@@ -403,7 +536,7 @@ export default function Home() {
                   type="date"
                   value={filterDateFrom}
                   onChange={(e) => setFilterDateFrom(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
                 />
               </div>
 
@@ -416,7 +549,7 @@ export default function Home() {
                   type="date"
                   value={filterDateTo}
                   onChange={(e) => setFilterDateTo(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
                 />
               </div>
             </div>
@@ -431,7 +564,7 @@ export default function Home() {
                 placeholder="Filter by company name..."
                 value={filterCompany}
                 onChange={(e) => setFilterCompany(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-500"
               />
             </div>
 
@@ -499,10 +632,22 @@ export default function Home() {
               </div>
             )}
 
-            {/* Results Count */}
-            <div className="text-sm text-gray-600 mt-4">
-              Showing {filteredAnnouncements.length} of {announcements.length}{" "}
-              announcements
+            {/* Results Count and Export Info */}
+            <div className="flex justify-between items-center mt-4">
+              <div className="text-sm text-gray-600">
+                Showing {filteredAnnouncements.length} of {announcements.length}{" "}
+                announcements
+                {filteredAnnouncements.length !== announcements.length && (
+                  <span className="ml-2 text-blue-600 font-medium">
+                    (Filtered)
+                  </span>
+                )}
+              </div>
+              {filteredAnnouncements.length > 0 && (
+                <div className="text-sm text-gray-500">
+                  Ready to export {filteredAnnouncements.length} records
+                </div>
+              )}
             </div>
           </div>
         )}
