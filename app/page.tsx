@@ -23,8 +23,6 @@ interface Stats {
   checked: number;
   unchecked: number;
   today: number;
-  topProducts?: Array<{ product: string; count: number }>;
-  topLocations?: Array<{ location: string; count: number }>;
 }
 
 interface FilterState {
@@ -326,102 +324,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Data Insights */}
-          {(stats.topProducts && stats.topProducts.length > 0) ||
-          (stats.topLocations && stats.topLocations.length > 0) ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-              {/* Top Products */}
-              {stats.topProducts && stats.topProducts.length > 0 && (
-                <div className="bg-gradient-to-r from-orange-50 to-red-50 p-4 rounded-lg border">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                    🍎 Top Products
-                  </h3>
-                  <div className="space-y-2">
-                    {stats.topProducts.slice(0, 5).map((item, index) => (
-                      <div
-                        key={item.product}
-                        className="flex items-center justify-between"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-600">
-                            #{index + 1}
-                          </span>
-                          <span className="text-sm text-gray-800 capitalize">
-                            {item.product}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-16 bg-gray-200 rounded-full h-2">
-                            <div
-                              className="bg-orange-500 h-2 rounded-full"
-                              style={{
-                                width: `${
-                                  stats.topProducts && stats.topProducts[0]
-                                    ? (item.count /
-                                        stats.topProducts[0].count) *
-                                      100
-                                    : 0
-                                }%`,
-                              }}
-                            ></div>
-                          </div>
-                          <span className="text-sm font-semibold text-orange-600">
-                            {item.count}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Top Locations */}
-              {stats.topLocations && stats.topLocations.length > 0 && (
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                    📍 Top Locations
-                  </h3>
-                  <div className="space-y-2">
-                    {stats.topLocations.slice(0, 5).map((item, index) => (
-                      <div
-                        key={item.location}
-                        className="flex items-center justify-between"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-600">
-                            #{index + 1}
-                          </span>
-                          <span className="text-sm text-gray-800 capitalize">
-                            {item.location}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-16 bg-gray-200 rounded-full h-2">
-                            <div
-                              className="bg-blue-500 h-2 rounded-full"
-                              style={{
-                                width: `${
-                                  stats.topLocations && stats.topLocations[0]
-                                    ? (item.count /
-                                        stats.topLocations[0].count) *
-                                      100
-                                    : 0
-                                }%`,
-                              }}
-                            ></div>
-                          </div>
-                          <span className="text-sm font-semibold text-blue-600">
-                            {item.count}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : null}
-
           {/* Search and Filter Controls */}
           <div className="space-y-4">
             {/* Search Bar */}
@@ -449,64 +351,6 @@ export default function Home() {
                 )}
               </button>
             </div>
-
-            {/* Quick Filter Buttons */}
-            {(stats.topProducts && stats.topProducts.length > 0) ||
-            (stats.topLocations && stats.topLocations.length > 0) ? (
-              <div className="space-y-3">
-                {/* Top Products Quick Filters */}
-                {stats.topProducts && stats.topProducts.length > 0 && (
-                  <div>
-                    <div className="text-sm font-medium text-gray-700 mb-2">
-                      🍎 Quick Product Filters:
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {stats.topProducts.slice(0, 6).map((item) => (
-                        <button
-                          key={item.product}
-                          onClick={() =>
-                            updateFilter("filterProduct", item.product)
-                          }
-                          className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                            filters.filterProduct === item.product
-                              ? "bg-orange-500 text-white"
-                              : "bg-orange-100 text-orange-700 hover:bg-orange-200"
-                          }`}
-                        >
-                          {item.product} ({item.count})
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Top Locations Quick Filters */}
-                {stats.topLocations && stats.topLocations.length > 0 && (
-                  <div>
-                    <div className="text-sm font-medium text-gray-700 mb-2">
-                      📍 Quick Location Filters:
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {stats.topLocations.slice(0, 6).map((item) => (
-                        <button
-                          key={item.location}
-                          onClick={() =>
-                            updateFilter("filterLocation", item.location)
-                          }
-                          className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                            filters.filterLocation === item.location
-                              ? "bg-blue-500 text-white"
-                              : "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                          }`}
-                        >
-                          {item.location} ({item.count})
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : null}
 
             {/* Advanced Filters Panel */}
             {filters.showFilters && (
