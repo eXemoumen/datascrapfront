@@ -442,7 +442,7 @@ export default function Home() {
               }}
               className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2"
             >
-              🔄 Refresh Data
+              🔄 Refresh 
             </button>
             <button
               onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
